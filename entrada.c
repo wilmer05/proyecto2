@@ -69,6 +69,7 @@ void validar_inicializar(int argc, char *argv[]){
     	}
 
     	if (!strcmp(argv[posicion],"-d")) {
+			free(dir);
 			dir = argv[++posicion]; //este sera el archivo de donde se empzara a buscar
 			int fd = open(dir,O_RDONLY);
 			if(fd==-1){
