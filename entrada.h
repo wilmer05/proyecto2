@@ -3,6 +3,7 @@
 #ifndef entrada
 #define entrada
 #define TAM 1000
+#define TAM2 1000 //tamanio de cadenas temporales
 char comando[TAM];
 FILE *ptr; //archivo a escribir
 char *dir;
