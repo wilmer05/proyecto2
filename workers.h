@@ -8,5 +8,8 @@
 #include<dirent.h>
 #include<sys/dir.h>
 #include"entrada.h"
+#include<signal.h>
+
+void childHandler();
 
 void maestro(char *);
