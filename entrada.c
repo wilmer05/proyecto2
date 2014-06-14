@@ -1,6 +1,10 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<unistd.h>
+#include<fcntl.h>
+#include<sys/types.h>
+#include<sys/stat.h>
 #include"entrada.h"
 
 void ayuda(){
@@ -27,7 +31,6 @@ void validar_inicializar(int argc, char *argv[]){
   /***************************************************************
   /* Chequea el numero de argumentos minimo y maximo
   /***************************************************************/
-	P=N=1;
   	if (argc!=2 && argc!=4 && argc!=6) {
     	printf("Error en linea de argumentos \n");
 	    printf("USO: argumentos [-h] | [-n i] [-d directorio] salida \n");
@@ -36,9 +39,9 @@ void validar_inicializar(int argc, char *argv[]){
 
   /***************************************************************
   /* Chequea el resto de los parametros
-  /*  while ((posicion < argc - 2))
-  /*  Con este condicional valido solo las opciones con - (el - 2) 
-  /*  evita que se procesen los dos ultimos argumentos dentro del while.
+  /*  while ((posicion < argc - 1))
+  /*  Con este condicional valido solo las opciones con - (el - 1) 
+  /*  evita que se procese el ultimo argumento dentro del while.
   /***************************************************************/
 
 	if(argc==2 && !strcmp(argv[1],"-h")){
@@ -66,8 +69,22 @@ void validar_inicializar(int argc, char *argv[]){
     	}
 
     	if (!strcmp(argv[posicion],"-d")) {
-			dir = argv[++posicion];
-
+			dir = argv[++posicion]; //este sera el archivo de donde se empzara a buscar
+			int fd = open(dir,O_RDONLY);
+			if(fd==-1){
+				printf("Directorio inexistente\n");
+				exit(1);
+			}
+			close(fd);
+			struct stat buf;
+			if(stat(dir,&buf)==-1){
+				fprintf(stderr,"El directorio pasado no existe o no se pudo abrir\n.");
+				exit(1);
+			}
+			if(!(buf.st_mode & S_IFDIR)){
+				fprintf(stderr,"El directorio pasado no es un directorio\n");
+				exit(1);
+			}
       		posicion = posicion + 1;
 	      	continue;
 	    }
@@ -79,7 +96,5 @@ void validar_inicializar(int argc, char *argv[]){
 	    }
 	}
 
-	//el archivo de donde se explorara todo es el siguiente argumento`
-	printf("%s",argv[posicion]);
 	
 }
