@@ -6,6 +6,12 @@ int cnt=0;
 pthread_mutex_t mutex; //mutex para el contador
 pthread_t hilo;
 
+void inic_c(contador *ptr){
+	ptr->archivos=0;
+	ptr->peso=0LL;
+	ptr->directorios=0;
+}
+
 //funcion utilizada por sincronizacion
 //para aumentar el contador de procesos concurrentes hasta el momento
 void *inc(void *x){
@@ -28,19 +34,22 @@ void childHandler(){
 }
 
 //funcion para procesar la exploracion de un archivo o directorio
-long long procesar(char *arch, int *f, int offset){
+contador * procesar(char *arch, int *f, int offset){
 		struct stat buf;
 		char tmp[500];
 		stat(arch,&buf);
 
-		long long tamanio=0LL;	
+		contador *res = (contador *)malloc(sizeof (contador));
+		inic_c(res);
+		contador *temp;
 
 		//si es un archivo escribo su tamanio en el pipe
 		if(!(buf.st_mode & S_IFDIR)){
 
 			sprintf(tmp,"%lld %s\n",(long long)buf.st_size,arch);
 			write(*(f+offset+3),tmp,strlen(tmp));
-			tamanio=(long long)buf.st_size;
+			res->peso=(long long)buf.st_size;
+			res->archivos=1;
 		}
 		else{
 			//si es un directorio exploro recursivamente
@@ -55,19 +64,30 @@ long long procesar(char *arch, int *f, int offset){
 				strcat(tmp,"/");
 				strcat(tmp,ent->d_name);
 				//exploro recursivamente
-				tamanio+=procesar(tmp,f,offset);
+				temp=procesar(tmp,f,offset);
+				res->peso+=temp->peso;
+				res->archivos+=temp->archivos;
+				res->directorios+=temp->directorios;
+				free(temp);
 			}
+
+			//este es un directorio asi que sumo 1 
+			res->directorios++;
 			strcpy(tmp,arch);	
-			sprintf(tmp,"%lld %s\n",tamanio,arch);
+			sprintf(tmp,"%lld %s\n",res->peso,arch);
 			write(*(f+offset+3),tmp,strlen(tmp));
 			closedir(directorio);
 		}
-		return tamanio;
+		return res;
 }
 
 //buffer para la escritura final
 char buffer[TAM3];
 
+//conteo de tamanio total, archivos y directorios respectivamente
+long long tam = 0LL;
+int cnt_arch =0;
+int cnt_dir=0;
 
 void maestro(char *d){
 
@@ -95,7 +115,6 @@ void maestro(char *d){
 	strcpy(path2,path);
 
 	directorio = opendir(dir);
-	long long tam = 0LL;
 
 	//busco en todas las entradas del directorio que me mandaron a explorar
 	while(ent=readdir(directorio)){
@@ -111,6 +130,7 @@ void maestro(char *d){
 		if(!(buf.st_mode & S_IFDIR)){
 			fprintf(ptr,"%lld %s\n",(long long)buf.st_size,path2);
 			tam+=(long long)buf.st_size;
+			cnt_arch++;
 		}
 		//sino, entonces es un directorio y tengo que hacer un fork
 		//para que un hijo se encargue de calcular su tamanio
@@ -131,6 +151,7 @@ void maestro(char *d){
 			pthread_join(hilo,NULL);
 			pipe(fds+procs);
 			pipe(fds+procs+2);
+
 	
 			//creo el hijo
 			if(!fork()){
@@ -138,12 +159,20 @@ void maestro(char *d){
 				close(*(fds+procs+1));
 				//ni tampoco leera por el pipe procs+2
 				close(*(fds+procs+2));
+				contador *temp;
 				char tmp[300];
 				read(*(fds+procs),tmp,300);
 				//proceso el directorio o archivo, segun sea el caso
 				//la funcion procesar se encargara
-				tam+=procesar(tmp,fds,procs);
+				temp=procesar(tmp,fds,procs);
+				tam+=temp->peso;
+				cnt_arch+=temp->archivos;
+				cnt_dir+=temp->directorios;
 				kill(getppid(),SIGCHLD);
+
+				//cierro pipes utilizados por el hijo
+				close(fds[procs]);
+				close(fds[procs+3]);
 				exit(0);
 			}
 			else{
@@ -169,6 +198,9 @@ void maestro(char *d){
 		close(fds[i+2]);
 	}
 	fprintf(ptr,"%lld %s\n",tam,d);
+	fprintf(ptr,"Numero de archivos explorados: %d\n",cnt_arch);
+	fprintf(ptr,"Numero de directorios explorados: %d\n",cnt_dir+1);
+
 	closedir(directorio);
 	fclose(ptr);
 }

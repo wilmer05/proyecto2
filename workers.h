@@ -13,6 +13,14 @@
 
 #define MAX_PROC 5000
 
+typedef struct{
+	long long peso;
+	int archivos;
+	int directorios;
+	} contador;
+
+void inic_c(contador *);
+
 void *inc(void *);
 
 void *dec(void *);
@@ -21,4 +29,4 @@ void childHandler();
 
 void maestro(char *);
 
-long long procesar(char *, int *, int);
+contador * procesar(char *, int *, int);

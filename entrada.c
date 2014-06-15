@@ -98,14 +98,7 @@ void validar_inicializar(int argc, char *argv[]){
 	}
 
 	struct stat buf;
-	if(stat(argv[posicion],&buf)==-1){
-		fprintf(stderr,"El archivo de salida pasado no existe o no se pudo abrir\n.");
-		exit(1);
-	}
-	if((buf.st_mode & S_IFDIR)){
-		fprintf(stderr,"El archivo de salida pasado es un directorio\n");
-		exit(1);
-	}
+	stat(argv[posicion],&buf);
 
 	ptr = fopen(argv[posicion],"w");
 	
