@@ -9,7 +9,11 @@ Para compilar el programa, realice el comando:
 
 Para ejecutarlo:
 
+
 	./UsoDisco  [-h] | [-n i] [-d directorio] salida
 
 
+Para eliminar los archivos .o generados a tiempo de compilacion:
+
+	make clean
 
