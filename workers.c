@@ -83,7 +83,7 @@ contador * procesar(char *arch, int *f, int offset){
 			}
 
 			//este es un directorio asi que sumo 1 
-			res->directorios++;
+			(res->directorios)++;
 			strcpy(tmp,arch);	
 			sprintf(tmp,"%lld %s\n",res->peso,arch);
 			write(*(f+offset+3),tmp,strlen(tmp));
@@ -215,7 +215,7 @@ void maestro(char *d){
 	//espero a que terminen mis procesos
 	for(int i=0;i<I;i++) wait(&t);
 	
-	for(int i=0;i<6;i+=6){
+	for(int i=0;i<procs;i+=6){
 	
 		read(fds[i+2],buffer,TAM3);	
 		fprintf(ptr,"%s",buffer);
