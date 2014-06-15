@@ -88,7 +88,7 @@ char buffer[TAM3];
 long long tam = 0LL;
 int cnt_arch =0;
 int cnt_dir=0;
-
+int cnt_proc=0;
 void maestro(char *d){
 
 	int fds[4*MAX_PROC]; //aqui iran todos los descriptores de los posibles 
@@ -152,6 +152,8 @@ void maestro(char *d){
 			pipe(fds+procs);
 			pipe(fds+procs+2);
 
+			//se crea un nuevo proceso
+			cnt_proc++;
 	
 			//creo el hijo
 			if(!fork()){
@@ -200,6 +202,7 @@ void maestro(char *d){
 	fprintf(ptr,"%lld %s\n",tam,d);
 	fprintf(ptr,"Numero de archivos explorados: %d\n",cnt_arch);
 	fprintf(ptr,"Numero de directorios explorados: %d\n",cnt_dir+1);
+	fprintf(ptr,"Numero total de procesos creados (conteo total, no concurrente): %d\n",cnt_proc);
 
 	closedir(directorio);
 	fclose(ptr);
