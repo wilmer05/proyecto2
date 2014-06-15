@@ -10,7 +10,8 @@
 #include"entrada.h"
 #include<signal.h>
 #include<pthread.h>
-
+#include<sys/mman.h>
+#include<sys/wait.h>
 #define MAX_PROC 5000
 
 typedef struct{

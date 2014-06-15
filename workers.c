@@ -6,6 +6,17 @@ int cnt=0;
 pthread_mutex_t mutex; //mutex para el contador
 pthread_t hilo;
 
+
+//buffer para la escritura final
+char buffer[TAM3];
+
+//conteo de tamanio total, archivos y directorios respectivamente
+long long tam;
+int cnt_arch;
+int cnt_dir;
+int cnt_proc;
+
+
 void inic_c(contador *ptr){
 	ptr->archivos=0;
 	ptr->peso=0LL;
@@ -77,21 +88,20 @@ contador * procesar(char *arch, int *f, int offset){
 			sprintf(tmp,"%lld %s\n",res->peso,arch);
 			write(*(f+offset+3),tmp,strlen(tmp));
 			closedir(directorio);
+
 		}
 		return res;
 }
 
-//buffer para la escritura final
-char buffer[TAM3];
 
-//conteo de tamanio total, archivos y directorios respectivamente
-long long tam = 0LL;
-int cnt_arch =0;
-int cnt_dir=0;
-int cnt_proc=0;
 void maestro(char *d){
 
-	int fds[4*MAX_PROC]; //aqui iran todos los descriptores de los posibles 
+	tam = 0LL;
+	cnt_arch=0;
+	cnt_dir=0;
+	cnt_proc=0;
+
+	int fds[6*MAX_PROC]; //aqui iran todos los descriptores de los posibles 
 						 //hijos, en las posiciones pares iran los de lectura
 						 //y en los pares iran los de escritura
 
@@ -151,30 +161,39 @@ void maestro(char *d){
 			pthread_join(hilo,NULL);
 			pipe(fds+procs);
 			pipe(fds+procs+2);
+			pipe(fds+procs+4);
 
 			//se crea un nuevo proceso
 			cnt_proc++;
 	
+			
+
 			//creo el hijo
 			if(!fork()){
 				//este hijo no escribira por el pipe procs+1
 				close(*(fds+procs+1));
 				//ni tampoco leera por el pipe procs+2
 				close(*(fds+procs+2));
+
+				close(fds[procs+4]);
 				contador *temp;
 				char tmp[300];
+
+				//el hijo verifica que directorio debe explorar, cosa que le comunica el papa
 				read(*(fds+procs),tmp,300);
+
 				//proceso el directorio o archivo, segun sea el caso
 				//la funcion procesar se encargara
 				temp=procesar(tmp,fds,procs);
-				tam+=temp->peso;
-				cnt_arch+=temp->archivos;
-				cnt_dir+=temp->directorios;
+				sprintf(tmp,"%lld %d %d",temp->peso,temp->archivos,temp->directorios);
+				write(fds[procs+5],tmp,strlen(tmp));
+
 				kill(getppid(),SIGCHLD);
 
 				//cierro pipes utilizados por el hijo
 				close(fds[procs]);
 				close(fds[procs+3]);
+				close(fds[procs+5]);
 				exit(0);
 			}
 			else{
@@ -183,25 +202,43 @@ void maestro(char *d){
 
 				//ni escribira por el pipe procs+3
 				close(*(fds+procs+3));
+
+				close(fds[procs+5]);
 				write(*(fds+procs+1),path2,strlen(path2));
-				procs+=4;
+				procs+=6;
 			}
 		}
 		strcpy(path2,path);
 	}
 	
-	for(int i=0;i<procs;i+=4){
+	int t;
+	//espero a que terminen mis procesos
+	for(int i=0;i<I;i++) wait(&t);
+	
+	for(int i=0;i<6;i+=6){
 	
 		read(fds[i+2],buffer,TAM3);	
 		fprintf(ptr,"%s",buffer);
 
+		//temporales para leer la cantidad total que mi hijo leyo de archivos, dirs, etc
+		int temp1;
+		int temp2;
+		long long temp3;
+
+		read(fds[i+4],buffer,TAM3);
+		sscanf(buffer,"%lld %d %d",&temp3,&temp1,&temp2);
+		cnt_arch+=temp1;
+		cnt_dir+=temp2;
+		tam+=temp3;
+		
 		//cierro los pipes del maestro que aun siguen abiertos
 		close(fds[i+1]);
 		close(fds[i+2]);
+		close(fds[i+4]);
 	}
 	fprintf(ptr,"%lld %s\n",tam,d);
-	fprintf(stdout,"Numero de archivos explorados: %d\n",cnt_arch);
-	fprintf(stdout,"Numero de directorios explorados: %d\n",cnt_dir+1);
+	fprintf(stdout,"Numero de archivos encontrados: %d\n",cnt_arch);
+	fprintf(stdout,"Numero de directorios explorados (incluyendo el principal): %d\n",cnt_dir+1);
 	fprintf(stdout,"Numero total de procesos creados (conteo total, no concurrente): %d\n",cnt_proc+1);
 
 	closedir(directorio);
