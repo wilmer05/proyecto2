@@ -200,9 +200,9 @@ void maestro(char *d){
 		close(fds[i+2]);
 	}
 	fprintf(ptr,"%lld %s\n",tam,d);
-	fprintf(ptr,"Numero de archivos explorados: %d\n",cnt_arch);
-	fprintf(ptr,"Numero de directorios explorados: %d\n",cnt_dir+1);
-	fprintf(ptr,"Numero total de procesos creados (conteo total, no concurrente): %d\n",cnt_proc);
+	fprintf(stdout,"Numero de archivos explorados: %d\n",cnt_arch);
+	fprintf(stdout,"Numero de directorios explorados: %d\n",cnt_dir+1);
+	fprintf(stdout,"Numero total de procesos creados (conteo total, no concurrente): %d\n",cnt_proc+1);
 
 	closedir(directorio);
 	fclose(ptr);
