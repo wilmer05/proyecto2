@@ -27,7 +27,6 @@ int IsaNumber(int num, char arg)
 
 void validar_inicializar(int argc, char *argv[]){
   int posicion;
-	int num_N,num_I,num_P;	
   /***************************************************************
   /* Chequea el numero de argumentos minimo y maximo
   /***************************************************************/
@@ -49,6 +48,7 @@ void validar_inicializar(int argc, char *argv[]){
 		exit(0);
 	}
 
+	I=1;
 
   	posicion=1;
 
@@ -97,5 +97,16 @@ void validar_inicializar(int argc, char *argv[]){
 	    }
 	}
 
+	struct stat buf;
+	if(stat(argv[posicion],&buf)==-1){
+		fprintf(stderr,"El archivo de salida pasado no existe o no se pudo abrir\n.");
+		exit(1);
+	}
+	if((buf.st_mode & S_IFDIR)){
+		fprintf(stderr,"El archivo de salida pasado es un directorio\n");
+		exit(1);
+	}
+
+	ptr = fopen(argv[posicion],"w");
 	
 }

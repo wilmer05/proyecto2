@@ -9,7 +9,16 @@
 #include<sys/dir.h>
 #include"entrada.h"
 #include<signal.h>
+#include<pthread.h>
+
+#define MAX_PROC 5000
+
+void *inc(void *);
+
+void *dec(void *);
 
 void childHandler();
 
 void maestro(char *);
+
+long long procesar(char *, int *, int);

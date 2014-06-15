@@ -1,7 +1,7 @@
 CC = gcc
 HEAD = entrada.h workers.h
 OBJ = entrada.o main.o workers.o
-OPT = -std=c99
+OPT = -std=gnu99 -lpthread
 PROG = UsoDisco
 
 all: $(PROG)

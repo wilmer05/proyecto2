@@ -4,6 +4,7 @@
 #define entrada
 #define TAM 1000
 #define TAM2 1000 //tamanio de cadenas temporales
+#define TAM3 1000000
 char comando[TAM];
 FILE *ptr; //archivo a escribir
 char *dir;
